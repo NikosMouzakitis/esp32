@@ -1,0 +1,5 @@
+2078  python3 -m pip install esptool==3.3.1
+ 2079  cp /home/nicko/.local/bin/esptool.py .
+ 2080  python3 -m pip uninstall serial
+ 2081  python3 -m pip install pyserial
+
