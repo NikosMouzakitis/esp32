@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check Car Movement</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    button {
+      font-size: 20px;
+      padding: 10px 20px;
+      margin: 10px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button:active {
+      background-color: #45a049;
+    }
+
+    .slider-container {
+      margin-top: 30px;
+    }
+
+    #speedValue {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+
+    .control-container {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Check Car Movement</h1>
+
+  <!-- Direction Buttons -->
+  <div class="button-container">
+    <button id="forwardBtn">Forward</button>
+    <button id="backwardBtn">Backward</button>
+  </div>
+
+  <div class="button-container">
+    <button id="leftBtn">Left</button>
+    <button id="rightBtn">Right</button>
+  </div>
+
+  <!-- Speed Control Slider -->
+  <div class="slider-container">
+    <label for="speedSlider">Speed adjustment: </label>
+    <input type="range" id="speedSlider" min="0" max="100" value="50" step="1">
+    <div id="speedValue">Speed: 50</div>
+  </div>
+
+  <div class="control-container">
+    <h3>Current speed:</h3>
+    <p id="currentSpeed">0</p>
+  </div>
+
+  <script>
+    // Update speed value display when slider is changed
+    const speedSlider = document.getElementById("speedSlider");
+    const speedValue = document.getElementById("speedValue");
+    const currentSpeedDisplay = document.getElementById("currentSpeed");
+
+    speedSlider.oninput = function() {
+      speedValue.textContent = "Current speed: " + speedSlider.value;
+    }
+
+    // Control buttons logic (when pressed, hold the direction)
+    let forwardPressed = false;
+    let backwardPressed = false;
+    let leftPressed = false;
+    let rightPressed = false;
+
+    document.getElementById("forwardBtn").addEventListener("mousedown", function() {
+      forwardPressed = true;
+      sendDirection("forward",true);
+      updateCurrentSpeed();
+    });
+
+    document.getElementById("forwardBtn").addEventListener("mouseup", function() {
+      forwardPressed = false;
+      sendDirection("forward",false);
+      updateCurrentSpeed();
+    });
+
+    document.getElementById("backwardBtn").addEventListener("mousedown", function() {
+      backwardPressed = true;
+      sendDirection("backward",true);
+      updateCurrentSpeed();
+    });
+
+    document.getElementById("backwardBtn").addEventListener("mouseup", function() {
+      backwardPressed = false;
+      sendDirection("backward",false);
+      updateCurrentSpeed();
+    });
+
+    document.getElementById("leftBtn").addEventListener("mousedown", function() {
+      leftPressed = true;
+      sendDirection("left",true);
+      updateCurrentSpeed();
+    });
+
+    document.getElementById("leftBtn").addEventListener("mouseup", function() {
+      leftPressed = false;
+      sendDirection("left",false);
+      updateCurrentSpeed();
+    });
+
+    document.getElementById("rightBtn").addEventListener("mousedown", function() {
+      rightPressed = true;
+      sendDirection("right",true);
+      updateCurrentSpeed();
+    });
+
+    document.getElementById("rightBtn").addEventListener("mouseup", function() {
+      rightPressed = false;
+      sendDirection("right",false);
+      updateCurrentSpeed();
+    });
+
+
+    function sendDirection(direction, state) {
+      fetch(`/move?dir=${direction}&state=${state?'1':'0'}`)
+		    .then(response =>responce.text())
+		    .then(data => console.log("ESP32 Response: " + data))
+		    .catch(error => console.error("Error:",error));
+
+    }
+
+    function updateCurrentSpeed() {
+      let currentSpeed = 0;
+
+      if (forwardPressed) {
+        currentSpeed = speedSlider.value;
+      } else if (backwardPressed) {
+        currentSpeed = -speedSlider.value;
+      } else if (leftPressed || rightPressed) {
+        currentSpeed = 0;  // assuming no speed change when turning left or right
+      }
+
+      currentSpeedDisplay.textContent = currentSpeed;
+    }
+  </script>
+
+</body>
+</html>
