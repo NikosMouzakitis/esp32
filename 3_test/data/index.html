@@ -73,6 +73,10 @@
     <p id="currentSpeed">0</p>
   </div>
 
+  <div class="button-container">
+    <button id="otaBtn">Switch to OTA</button>
+  </div>
+
   <script>
     // Update speed value display when slider is changed
     const speedSlider = document.getElementById("speedSlider");
@@ -136,7 +140,19 @@
       sendDirection("right",false);
       updateCurrentSpeed();
     });
-
+   
+   document.getElementById("otaBtn").addEventListener("click", function() {
+	fetch("/ota")
+	.then(response => response.text())
+	.then(data => {
+	console.log("ESP32 Response: " + data);
+	alert("Switching to OTA mode. Please wait...");
+	})
+	.catch(error => {
+		console.error("Error:", error);
+	alert("Failed to switch to OTA mode.");
+	});
+   });
 
     function sendDirection(direction, state) {
       fetch(`/move?dir=${direction}&state=${state?'1':'0'}`)
