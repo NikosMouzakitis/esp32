@@ -3,15 +3,23 @@
 #include <SPIFFS.h>
 #include <Preferences.h>
 #include <ElegantOTA.h>
-#include <AsyncTCP.h>
-
+#include <Arduino_JSON.h>
 
 //not needed with new version of ElegantOTA.
 //#include <nvs_flash.h>
+//#include <AsyncTCP.h>
 
 #define debug 1
 
 AsyncWebServer server(80);
+
+// our websocket.
+AsyncWebSocket ws("/ws");
+String message="";
+String sliderValue="50";
+String txtValue = "0";
+JSONVar sliderValues;
+JSONVar speedTxtValue;
 
 Preferences preferences;
 String ota_ssid;
@@ -22,26 +30,106 @@ const char *password = "1234";
 int ota_mode = 0;
 unsigned long ota_progress_millis = 0;
 
+
+String getSliderValues(int arg)
+{
+	if(arg == 1)
+	{
+		sliderValues["sliderValue"] = String(sliderValue);
+		String jsonString = JSON.stringify(sliderValues);
+		Serial.println(jsonString);
+		return jsonString;
+	}
+	if(arg == 2)
+	{
+		speedTxtValue["speedTxtValue"] = String(txtValue);
+		String jsonString = JSON.stringify(speedTxtValue);
+		Serial.println(jsonString);
+		return jsonString;
+	}
+}
+
+void notifyClients(String sliderValues)
+{
+	ws.textAll(sliderValues);
+}
+
+void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+	AwsFrameInfo *info = (AwsFrameInfo*)arg;
+	Serial.println("Message: ");
+	Serial.println((char )*data);
+	if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+		data[len] = 0;
+		message = (char*)data;
+
+		if (message.indexOf("1s") >= 0) {
+			Serial.println("Updating sliderValue");
+			sliderValue = message.substring(2);
+			Serial.print(getSliderValues(1));
+			notifyClients(getSliderValues(1));
+		}
+		if(message.indexOf("2s") >= 0) {
+			Serial.println("update speedTextValue");
+			sliderValue = message.substring(2);
+
+			Serial.print(getSliderValues(2));
+			notifyClients(getSliderValues(2));
+		}
+
+		if (strcmp((char*)data, "getValues") == 0) {
+		//	notifyClients(getSliderValues());
+			notifyClients(getSliderValues(1));
+			notifyClients(getSliderValues(2));
+		}
+	}
+}
+
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+  Serial.println("new event");
+  switch (type) {
+    case WS_EVT_CONNECT:
+      Serial.println("conn event");
+      break;
+    case WS_EVT_DISCONNECT:
+      Serial.println("discon event");
+      Serial.printf("WebSocket client #%u disconnected\n", client->id());
+      break;
+    case WS_EVT_DATA:
+      Serial.println("data event");
+      handleWebSocketMessage(arg, data, len);
+      break;
+    case WS_EVT_PONG:
+    case WS_EVT_ERROR:
+      Serial.println("err event");
+      break;
+  }
+}
+
+void initWebSocket() {
+  ws.onEvent(onEvent);
+  server.addHandler(&ws);
+}
+
 ////////////////////////////////////////
 /// OVER THE AIR related functions /////
 ////////////////////////////////////////
 void onOTAStart() {
-  // Log when OTA has started
-  Serial.println("OTA update started!");
-  // <Add your own code here>
+	// Log when OTA has started
+	Serial.println("OTA update started!");
+	// <Add your own code here>
 }
 
 void onOTAProgress(size_t current, size_t final) {
 }
 
 void onOTAEnd(bool success) {
-  // Log when OTA has finished
-  if (success) {
-    Serial.println("OTA update finished successfully!");
-  } else {
-    Serial.println("There was an error during OTA update!");
-  }
-  // <Add your own code here>
+	// Log when OTA has finished
+	if (success) {
+		Serial.println("OTA update finished successfully!");
+	} else {
+		Serial.println("There was an error during OTA update!");
+	}
+	// <Add your own code here>
 }
 
 //////////////////////////////////////////
@@ -92,7 +180,7 @@ void startSTA(void)
 {
 	WiFi.mode(WIFI_STA);
 	WiFi.begin(ota_ssid, ota_pass);
-	
+
 	while(WiFi.status() != WL_CONNECTED) {
 		Serial.println("connecting to WiFi.");
 		delay(500);
@@ -123,11 +211,13 @@ void setup()
 			Serial.println(ota_ssid);
 		}
 	}
-	
+
 	// Close the preferences
 	preferences.end();
 
-	Serial.print("System in: "); Serial.print(state); Serial.println(" mode");
+	Serial.print("System in: ");
+	Serial.print(state);
+	Serial.println(" mode");
 
 	// Initialize SPIFFS
 	if (!SPIFFS.begin(true)) {
@@ -139,7 +229,7 @@ void setup()
 
 	WiFi.disconnect(true,true); //forget previous stored credentials
 	delay(2000);
-	
+
 	if(state=="AP")
 	{
 
@@ -165,7 +255,7 @@ void setup()
 			Serial.printf("Direction: %s, State: %s\n", direction.c_str(), state.c_str());
 			request->send(200, "text/plain", "OK");
 		});
-	
+
 		server.on("/ota", HTTP_GET, [](AsyncWebServerRequest *request) {
 			Serial.println("OTA button pressed");
 			request->send(200, "text/plain", "Switching to OTA mode.");
@@ -180,6 +270,8 @@ void setup()
 			Serial.println("Rebooting system.");
 			ESP.restart();
 		});
+
+		initWebSocket();
 
 	} else if(state=="STA") {
 

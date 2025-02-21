@@ -83,10 +83,10 @@
     const speedValue = document.getElementById("speedValue");
     const currentSpeedDisplay = document.getElementById("currentSpeed");
 
-    speedSlider.oninput = function() {
+/*    speedSlider.oninput = function() {
       speedValue.textContent = "Current speed: " + speedSlider.value;
     }
-
+*/
     // Control buttons logic (when pressed, hold the direction)
     let forwardPressed = false;
     let backwardPressed = false;
@@ -172,9 +172,62 @@
       } else if (leftPressed || rightPressed) {
         currentSpeed = 0;  // assuming no speed change when turning left or right
       }
-
       currentSpeedDisplay.textContent = currentSpeed;
+
+      // send the current speed to all clients to update.
+      const newval=currentSpeed;
+      const message='2s'+ newval;
+      ws.send(message);
+
     }
+
+
+
+    const ws = new WebSocket('ws://' + window.location.host + '/ws');
+    // Get references to the slider and value display
+    const slider = document.getElementById('speedSlider');
+    const sliderValueDisplay = document.getElementById('speedValue');
+
+    // Handle WebSocket connection open
+    ws.onopen = function() {
+        console.log('WebSocket connection established.');
+        // Request the current slider value from the server
+        ws.send('getValues');
+    };
+
+    // Handle incoming WebSocket messages
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data); // Parse the JSON message
+        const newValue = data.sliderValue; // Extract the slider value
+        slider.value = newValue; // Update the slider position
+        sliderValueDisplay.textContent = newValue; // Update the displayed value
+        console.log('Received new slider value:', newValue);
+    };
+
+    // Handle WebSocket errors
+    ws.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
+
+    // Handle WebSocket connection close
+    ws.onclose = function() {
+        console.log('WebSocket connection closed. Attempting to reconnect...');
+        // Attempt to reconnect after a delay
+        setTimeout(function() {
+            window.location.reload(); // Reload the page to reconnect
+        }, 2000);
+    };
+
+    // Handle slider input changes
+    slider.oninput = function() {
+        const newValue = slider.value; // Get the new slider value
+        const message = '1s' + newValue; // Format the message for the server
+        ws.send(message); // Send the new value to the server
+        sliderValueDisplay.textContent = newValue; // Update the displayed value
+        console.log('Sent new slider value:', newValue);
+    };
+
+
   </script>
 
 </body>
