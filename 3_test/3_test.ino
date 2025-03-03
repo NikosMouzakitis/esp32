@@ -47,6 +47,7 @@ String getSliderValues(int arg)
 		Serial.println(jsonString);
 		return jsonString;
 	}
+  return "";
 }
 
 void notifyClients(String sliderValues)
@@ -92,13 +93,14 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
       break;
     case WS_EVT_DISCONNECT:
       Serial.println("discon event");
-      Serial.printf("WebSocket client #%u disconnected\n", client->id());
+      Serial.printf("WebSocket client #%lu disconnected\n", client->id());
       break;
     case WS_EVT_DATA:
       Serial.println("data event");
       handleWebSocketMessage(arg, data, len);
       break;
     case WS_EVT_PONG:
+    case WS_EVT_PING:
     case WS_EVT_ERROR:
       Serial.println("err event");
       break;
@@ -114,22 +116,26 @@ void initWebSocket() {
 /// OVER THE AIR related functions /////
 ////////////////////////////////////////
 void onOTAStart() {
-	// Log when OTA has started
 	Serial.println("OTA update started!");
-	// <Add your own code here>
 }
 
 void onOTAProgress(size_t current, size_t final) {
 }
 
 void onOTAEnd(bool success) {
-	// Log when OTA has finished
+	//modification of the state into the preferences,
+	//then reboot on new state WIFI_STA
+	
+	preferences.begin("credentials",false);
+	preferences.putString("state","AP");
+	Serial.println("modifying STA-->AP");
+	preferences.end();
+
 	if (success) {
 		Serial.println("OTA update finished successfully!");
 	} else {
 		Serial.println("There was an error during OTA update!");
 	}
-	// <Add your own code here>
 }
 
 //////////////////////////////////////////
@@ -175,6 +181,7 @@ void readFile(const char *path) {
 
 }
 */
+
 //switch to STA station mode.
 void startSTA(void)
 {
@@ -215,7 +222,7 @@ void setup()
 	// Close the preferences
 	preferences.end();
 
-	Serial.print("System in: ");
+	Serial.print("esp in: ");
 	Serial.print(state);
 	Serial.println(" mode");
 
@@ -232,12 +239,10 @@ void setup()
 
 	if(state=="AP")
 	{
-
 		// Connect to Wi-Fi
 		WiFi.softAP(ssid, password);
 		Serial.println("AP started");
 		Serial.println(WiFi.softAPIP());
-
 
 		// Serve a simple HTML page
 		server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -250,7 +255,7 @@ void setup()
 			String direction = request->getParam("dir")->value();
 			String state = request->getParam("state")->value();
 			//fetch state to be (high on pressed, low on non-pressed)
-			int pinState = (state == "1") ? HIGH : LOW;
+			//int pinState = (state == "1") ? HIGH : LOW;
 			// printout to inform developer on monitoring.
 			Serial.printf("Direction: %s, State: %s\n", direction.c_str(), state.c_str());
 			request->send(200, "text/plain", "OK");
@@ -260,7 +265,8 @@ void setup()
 			Serial.println("OTA button pressed");
 			request->send(200, "text/plain", "Switching to OTA mode.");
 
-			//modify state on preferences and reboot.
+			//modification of the state into the preferences,
+			//then reboot on new state WIFI_STA
 			preferences.begin("credentials",false);
 			preferences.putString("state","STA");
 			Serial.println("modifying AP-->STA");
@@ -282,14 +288,13 @@ void setup()
 		ElegantOTA.onStart(onOTAStart);
 		ElegantOTA.onProgress(onOTAProgress);
 		ElegantOTA.onEnd(onOTAEnd);
+
 	} else {
 		Serial.println("you should never end here. Halting");
 		while(1);
 	}
 
-
 	server.begin();
-//	Serial.println("worked the OTA");
 }
 
 void loop()
@@ -297,7 +302,7 @@ void loop()
 	if(ota_mode) {
 		ElegantOTA.loop();
 	} else {
-		Serial.println("old");
+		Serial.println("exec");
 		delay(1000);
 	}
 }
