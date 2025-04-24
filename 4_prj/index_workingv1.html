@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESP32 DHT11 Monitor</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      text-align: center; 
+      margin: 0 auto; 
+      padding: 20px;
+      max-width: 800px;
+    }
+    .container { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+    }
+    .gauge-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px 0;
+      width: 100%;
+    }
+    .gauge {
+      width: 200px;
+      height: 150px;
+      position: relative;
+    }
+    .gauge-body {
+      width: 100%;
+      height: 0;
+      padding-bottom: 50%;
+      position: relative;
+      border-top-left-radius: 100% 200%;
+      border-top-right-radius: 100% 200%;
+      overflow: hidden;
+      background: #f5f5f5;
+    }
+    .gauge-fill {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, #4bc0c0, #ffcd56, #ff6384);
+      transform-origin: center top;
+      transform: rotate(0.5turn);
+      transition: transform 0.5s ease-out;
+    }
+    .gauge-cover {
+      width: 75%;
+      height: 150%;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 25%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+      font-weight: bold;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2) inset;
+    }
+    .slider { 
+      width: 80%; 
+      margin: 20px; 
+    }
+    .label { 
+      font-size: 1.2em; 
+      margin: 5px; 
+      font-weight: bold;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ESP32 Environment Monitor</h1>
+    
+    <div class="gauge-container">
+      <div>
+        <div class="label">Temperature (°C)</div>
+        <div class="gauge" id="tempGauge">
+          <div class="gauge-body">
+            <div class="gauge-fill" id="tempFill"></div>
+            <div class="gauge-cover" id="tempValue">--°C</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="label">Humidity (%)</div>
+        <div class="gauge" id="humGauge">
+          <div class="gauge-body">
+            <div class="gauge-fill" id="humFill"></div>
+            <div class="gauge-cover" id="humValue">--%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="label">LED Brightness</div>
+    <input type="range" min="0" max="255" value="128" class="slider" id="brightnessSlider">
+    <div id="brightnessValue">50%</div>
+    
+    <button onclick="location.href='/ota'">OTA Update</button>
+  </div>
+
+  <script>
+    // Initialize WebSocket connection
+    const socket = new WebSocket(`ws://${window.location.hostname}/ws`);
+    const slider = document.getElementById('brightnessSlider');
+    const brightnessValue = document.getElementById('brightnessValue');
+
+    // Gauge update functions
+    function updateTempGauge(value) {
+      const tempFill = document.getElementById('tempFill');
+      const tempValue = document.getElementById('tempValue');
+      
+      // Scale temperature to gauge rotation (-10°C to 50°C range)
+      const minTemp = -10;
+      const maxTemp = 50;
+      const percentage = Math.min(Math.max((value - minTemp) / (maxTemp - minTemp), 1), 0);
+      const rotation = percentage * 0.5;
+      
+      tempFill.style.transform = `rotate(${rotation}turn)`;
+      tempValue.textContent = `${Math.round(value)}°C`;
+      
+      // Update color based on temperature
+      if (value < 10) {
+        tempFill.style.background = '#4bc0c0'; // Cold (blue)
+      } else if (value < 25) {
+        tempFill.style.background = '#ffcd56'; // Moderate (yellow)
+      } else {
+        tempFill.style.background = '#ff6384'; // Hot (red)
+      }
+    }
+
+    function updateHumGauge(value) {
+      const humFill = document.getElementById('humFill');
+      const humValue = document.getElementById('humValue');
+      
+      // Scale humidity to gauge rotation (0-100% range)
+      const percentage = Math.min(Math.max(value / 100, 0), 1);
+      const rotation = percentage * 0.5;
+      
+      humFill.style.transform = `rotate(${rotation}turn)`;
+      humValue.textContent = `${Math.round(value)}%`;
+      
+      // Update color based on humidity
+      if (value < 30) {
+        humFill.style.background = '#ff6384'; // Dry (red)
+      } else if (value < 70) {
+        humFill.style.background = '#ffcd56'; // Moderate (yellow)
+      } else {
+        humFill.style.background = '#4bc0c0'; // Humid (blue)
+      }
+    }
+
+    // Initialize gauges
+    updateTempGauge(0);
+    updateHumGauge(0);
+
+    // Update sensor readings when data is received
+    socket.onmessage = function(event) {
+      const data = JSON.parse(event.data);
+      
+      // Update gauges
+      updateTempGauge(data.temperature);
+      updateHumGauge(data.humidity);
+      
+      // Update slider if needed
+      if (slider.value != data.brightness) {
+        slider.value = data.brightness;
+        brightnessValue.textContent = `${Math.round(data.brightness/255*100)}%`;
+      }
+    };
+
+    // Send brightness changes to ESP32
+    slider.oninput = function() {
+      const brightness = this.value;
+      brightnessValue.textContent = `${Math.round(brightness/255*100)}%`;
+      socket.send(`brightness${brightness}`);
+    };
+  </script>
+</body>
+</html>

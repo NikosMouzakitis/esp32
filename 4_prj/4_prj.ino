@@ -12,7 +12,7 @@
 #define debug 1
 
 AsyncWebServer server(80);
-
+String mySliderValue = "128"; //initial Led value
 // our websocket.
 AsyncWebSocket ws("/ws");
 String message="";
@@ -21,10 +21,16 @@ String txtValue = "0";
 JSONVar sliderValues;
 JSONVar speedTxtValue;
 
+JSONVar readings;
+int ledPin = 5;
+float mock_temp = 28.5;
+float mock_hum = 67.5;
+
 Preferences preferences;
 String ota_ssid;
 String ota_pass;
 String state;
+
 const char *ssid = "esp32net";
 const char *password = "1234";
 int ota_mode = 0;
@@ -50,9 +56,9 @@ String getSliderValues(int arg)
   return "";
 }
 
-void notifyClients(String sliderValues)
+void notifyClients(String readings)
 {
-	ws.textAll(sliderValues);
+	ws.textAll(readings.c_str());
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
@@ -62,27 +68,23 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
 	if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
 		data[len] = 0;
 		message = (char*)data;
-
-		if (message.indexOf("1s") >= 0) {
-			Serial.println("Updating sliderValue");
-			sliderValue = message.substring(2);
-			Serial.print(getSliderValues(1));
-			notifyClients(getSliderValues(1));
+		if(message.startsWith("brightness")) {
+			mySliderValue = message.substring(10);
+			analogWrite(ledPin, mySliderValue.toInt());
+			notifyClients(getSensorReadings());
 		}
-		if(message.indexOf("2s") >= 0) {
-			Serial.println("update speedTextValue");
-			sliderValue = message.substring(2);
-
-			Serial.print(getSliderValues(2));
-			notifyClients(getSliderValues(2));
-		}
-
-		if (strcmp((char*)data, "getValues") == 0) {
-			notifyClients(getSliderValues(1));
-			notifyClients(getSliderValues(2));
-		}
+	
 	}
 }
+
+String getSensorReadings() {
+	readings["temperature"] = String(mock_temp);
+	readings["humidity"] = String(mock_hum);
+	readings["brightness"] = mySliderValue;
+	return JSON.stringify(readings);
+
+}
+
 
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
   Serial.println("new event");
@@ -152,7 +154,7 @@ void startSTA(void)
 void setup()
 {
 	Serial.begin(115200);
-
+	pinMode(ledPin, OUTPUT);
 	//load ssid and password from preferences
 	// Open the "credentials" namespace
 	preferences.begin("credentials", true); // true for read-only mode
@@ -255,6 +257,23 @@ void setup()
 
 	server.begin();
 }
+void readDHT11() {
+  // Mock data - replace with actual DHT readings when library is installed
+  mock_temp += 0.1;
+  if (mock_temp > 30.0) mock_temp = 20.0;
+  
+  mock_hum += 0.5;
+  if (mock_hum > 70.0) mock_hum = 30.0;
+  
+  // Uncomment when using real DHT sensor
+  /*
+  float newTemp = dht.readTemperature();
+  float newHum = dht.readHumidity();
+  
+  if (!isnan(newTemp)) temperature = newTemp;
+  if (!isnan(newHum)) humidity = newHum;
+  */
+}
 
 void loop()
 {
@@ -263,6 +282,15 @@ void loop()
 	} else {
 		if(debug)
 			Serial.println("exec");
-		delay(1000);
+		static unsigned long lastSensorRead = 0;
+		if(millis() - lastSensorRead > 2000) {
+			readDHT11();	
+			notifyClients(getSensorReadings());
+			lastSensorRead = millis();
+		}
+		ws.cleanupClients();
+//		analogWrite(ledPin, mySliderValue.toInt());
+///		notifyClients(readings);
+//		delay(1000);
 	}
 }
