@@ -1,0 +1,9 @@
+The DHT11 sensor that i acquired from the laboratory
+didn't worked in the case(couldn't read any values)
+so in the implementation there are mock values that are 
+modified in order to be able to inspect them in the webpage
+on the gauges.
+
+The LED worked fine, and it was fully controllable by utilization 
+of the webpage's slider.
+
