@@ -1,0 +1,10 @@
+\contentsline {section}{\numberline {1}Abstract}{1}{section.1}%
+\contentsline {chapter}{Abstract}{1}{section.1}%
+\contentsline {section}{\numberline {2}Data Details}{2}{section.2}%
+\contentsline {section}{\numberline {3}Method}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Classification with texture, shape and statistical features}{4}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Classification with frequency features}{6}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Classification utilizing all features}{8}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Evaluation Findings}{10}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Reference image selection}{12}{section.4}%
+\contentsline {section}{\numberline {5}Evaluation of classification with histogram matching}{13}{section.5}%

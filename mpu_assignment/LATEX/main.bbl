@@ -1,0 +1,23 @@
+\begin{thebibliography}{1}
+
+\bibitem{data}
+\newblock \url{https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset}
+\newblock Accessed: 2025-05-09.
+
+\bibitem{code}
+	Source code and data used in this project: 
+\newblock \url{https://github.com/NikosMouzakitis/cv_master_25}
+
+\bibitem{duron}
+	Duron L, Balvay D, Vande Perre S, Bouchouicha A, Savatovsky J, Sadik J-C, et al. (2019) Gray-level discretization impacts reproducible MRI radiomics texture features. PLoS ONE 14(3): e0213459. \url{https://doi.org/10.1371/journal.pone.0213459}
+
+\bibitem{Fan}
+	Fan, H., Luo, Y., Gu, F. et al. Artificial intelligence-based MRI radiomics and radiogenomics in glioma. Cancer Imaging 24, 36 (2024).
+		\url{https://doi.org/10.1186/s40644-024-00682-y}
+
+\bibitem{li}
+	Li, M., Liu, L., Qi, J. et al. MRI-based machine learning models predict the malignant biological behavior of meningioma. BMC Med Imaging 23, 141 (2023). \url{https://doi.org/10.1186/s12880-023-01101-7}
+
+
+
+\end{thebibliography}
