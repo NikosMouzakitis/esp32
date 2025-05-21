@@ -1,15 +1,16 @@
 \BOOKMARK [1][-]{section.1}{Introduction}{}% 1
-\BOOKMARK [1][-]{section.2}{Related Work}{}% 2
-\BOOKMARK [1][-]{section.3}{Hw and Sw Requirements}{}% 3
-\BOOKMARK [2][-]{subsection.3.1}{Data Details}{section.3}% 4
-\BOOKMARK [2][-]{subsection.3.2}{Method}{section.3}% 5
-\BOOKMARK [1][-]{section.4}{Evaluation}{}% 6
-\BOOKMARK [2][-]{subsection.4.1}{Classification with texture, shape and statistical features}{section.4}% 7
-\BOOKMARK [2][-]{subsection.4.2}{Classification with frequency features}{section.4}% 8
-\BOOKMARK [2][-]{subsection.4.3}{Classification utilizing all features}{section.4}% 9
-\BOOKMARK [2][-]{subsection.4.4}{Evaluation Findings}{section.4}% 10
-\BOOKMARK [2][-]{subsection.4.5}{Classifier Optimization}{section.4}% 11
-\BOOKMARK [1][-]{section.5}{Histogram Matching enchancement}{}% 12
-\BOOKMARK [2][-]{subsection.5.1}{Reference image selection}{section.5}% 13
-\BOOKMARK [2][-]{subsection.5.2}{Evaluation of classification with histogram matching}{section.5}% 14
-\BOOKMARK [1][-]{section.6}{Conclusion}{}% 15
+\BOOKMARK [1][-]{section.2}{MPU9250 Sensor Data and Movement Detection}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Sensor Overview}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Data Acquisition}{section.2}% 4
+\BOOKMARK [2][-]{subsection.2.3}{Threshold-Based Movement Detection}{section.2}% 5
+\BOOKMARK [2][-]{subsection.2.4}{Controlling LEDs and PWM}{section.2}% 6
+\BOOKMARK [2][-]{subsection.2.5}{Status Publishing}{section.2}% 7
+\BOOKMARK [1][-]{section.3}{MQTT Communication Architecture}{}% 8
+\BOOKMARK [2][-]{subsection.3.1}{Restore request and response flow}{section.3}% 9
+\BOOKMARK [1][-]{section.4}{Node-RED and InfluxDB Integration}{}% 10
+\BOOKMARK [2][-]{subsection.4.1}{Node-RED Flow Design}{section.4}% 11
+\BOOKMARK [2][-]{subsection.4.2}{InfluxDB Query}{section.4}% 12
+\BOOKMARK [2][-]{subsection.4.3}{State Restoration}{section.4}% 13
+\BOOKMARK [2][-]{subsection.4.4}{UI visualization}{section.4}% 14
+\BOOKMARK [1][-]{section.5}{Summary of Data Flow}{}% 15
+\BOOKMARK [1][-]{section.6}{Motion detection via machine learning}{}% 16
