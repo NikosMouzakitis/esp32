@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2025.3.1)  21 MAY 2025 23:47
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2025.3.1)  22 MAY 2025 07:52
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -445,7 +445,40 @@ Package caption Info: Standard document class detected.
 Package caption Info: float package is loaded.
 Package caption Info: hyperref package is loaded.
 Package caption Info: listings package is loaded.
+)
+(/usr/share/texlive/texmf-dist/tex/latex/algorithms/algorithm.sty
+Package: algorithm 2009/08/24 v0.1 Document Style `algorithm' - floating enviro
+nment
+
+(/usr/share/texlive/texmf-dist/tex/latex/base/ifthen.sty
+Package: ifthen 2014/09/29 v1.1c Standard LaTeX ifthen package (DPC)
+)
+\@float@every@algorithm=\toks27
+\c@algorithm=\count305
+)
+(/usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algpseudocode.sty
+Package: algpseudocode 
+
+(/usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algorithmicx.sty
+Package: algorithmicx 2005/04/27 v1.2 Algorithmicx
+
+Document Style algorithmicx 1.2 - a greatly improved `algorithmic' style
+\c@ALG@line=\count306
+\c@ALG@rem=\count307
+\c@ALG@nested=\count308
+\ALG@tlm=\skip66
+\ALG@thistlm=\skip67
+\c@ALG@Lnr=\count309
+\c@ALG@blocknr=\count310
+\c@ALG@storecount=\count311
+\c@ALG@tmpcounter=\count312
+\ALG@tmplength=\skip68
+)
+Document Style - pseudocode environments for use with the `algorithmicx' style
 ) (./main.aux
+
+LaTeX Warning: Label `fig1:' multiply defined.
+
 
 LaTeX Warning: Label `fig1:' multiply defined.
 
@@ -458,24 +491,24 @@ LaTeX Warning: Label `fig1:' multiply defined.
 )
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 59.
+LaTeX Font Info:    ... okay on input line 59.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 59.
+LaTeX Font Info:    ... okay on input line 59.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 59.
+LaTeX Font Info:    ... okay on input line 59.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 59.
+LaTeX Font Info:    ... okay on input line 59.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 59.
+LaTeX Font Info:    ... okay on input line 59.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 59.
+LaTeX Font Info:    ... okay on input line 59.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 59.
+LaTeX Font Info:    ... okay on input line 59.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 59.
+LaTeX Font Info:    ... okay on input line 59.
 \AtBeginShipoutBox=\box61
-Package hyperref Info: Link coloring OFF on input line 52.
+Package hyperref Info: Link coloring OFF on input line 59.
  (/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2019/09/16 v2.46 Cross-referencing by name of section
 
@@ -485,31 +518,31 @@ Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
 (/usr/share/texlive/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
 Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
-\c@section@level=\count305
+\c@section@level=\count313
 )
-LaTeX Info: Redefining \ref on input line 52.
-LaTeX Info: Redefining \pageref on input line 52.
-LaTeX Info: Redefining \nameref on input line 52.
+LaTeX Info: Redefining \ref on input line 59.
+LaTeX Info: Redefining \pageref on input line 59.
+LaTeX Info: Redefining \nameref on input line 59.
 
 (./main.out) (./main.out)
 \@outlinefile=\write3
 \openout3 = `main.out'.
 
-\c@lstlisting=\count306
+\c@lstlisting=\count314
 
 (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count307
+\scratchcounter=\count315
 \scratchdimen=\dimen197
 \scratchbox=\box62
-\nofMPsegments=\count308
-\nofMParguments=\count309
-\everyMPshowfont=\toks27
-\MPscratchCnt=\count310
+\nofMPsegments=\count316
+\nofMParguments=\count317
+\everyMPshowfont=\toks28
+\MPscratchCnt=\count318
 \MPscratchDim=\dimen198
-\MPnumerator=\count311
-\makeMPintoPDFobject=\count312
-\everyMPtoPDFconversion=\toks28
+\MPnumerator=\count319
+\makeMPintoPDFobject=\count320
+\everyMPtoPDFconversion=\toks29
 ) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
@@ -563,54 +596,61 @@ File: siunitx-abbreviations.cfg 2017/11/26 v2.7k siunitx: Abbreviated units
 )
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: End \AtBeginDocument code.
+<con.jpeg, id=72, 1084.05pt x 985.6825pt>
+File: con.jpeg Graphic file (type jpg)
+<use con.jpeg>
+Package pdftex.def Info: con.jpeg  used on input line 85.
+(pdftex.def)             Requested size: 226.48395pt x 205.93156pt.
 
 [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-Overfull \hbox (0.68964pt too wide) in paragraph at lines 100--102
+Overfull \hbox (0.68964pt too wide) in paragraph at lines 119--121
 \OT1/cmr/m/n/12 The ESP32 pub-lishes its cur-rent LED and PWM states on the MQT
 T topic \OT1/cmtt/m/n/12 esp32/status
  []
 
-<restore.png, id=74, 1034.86626pt x 813.0375pt>
+[2 <./con.jpeg>]
+<restore.png, id=89, 1034.86626pt x 813.0375pt>
 File: restore.png Graphic file (type png)
 <use restore.png>
-Package pdftex.def Info: restore.png  used on input line 139.
+Package pdftex.def Info: restore.png  used on input line 158.
 (pdftex.def)             Requested size: 407.66833pt x 320.28409pt.
-[2]
-<node1.png, id=81, 753.81625pt x 293.095pt>
+ [3 <./restore.png>]
+<node1.png, id=97, 753.81625pt x 293.095pt>
 File: node1.png Graphic file (type png)
 <use node1.png>
-Package pdftex.def Info: node1.png  used on input line 166.
+Package pdftex.def Info: node1.png  used on input line 185.
 (pdftex.def)             Requested size: 407.66833pt x 158.50597pt.
- [3 <./restore.png>]
-Overfull \hbox (14.53882pt too wide) in paragraph at lines 183--183
+
+Overfull \hbox (14.53882pt too wide) in paragraph at lines 202--202
 []\OT1/cmtt/m/n/8 echo "deb https://repos.influxdata.com/ubuntu bionic stable" 
 |  sudo tee /etc/apt/sources.list.d/influxdb.list[] 
  []
 
 [4 <./node1.png>]
-<ui_conf.png, id=98, 1252.68pt x 499.8675pt>
+<ui_conf.png, id=108, 1252.68pt x 499.8675pt>
 File: ui_conf.png Graphic file (type png)
 <use ui_conf.png>
-Package pdftex.def Info: ui_conf.png  used on input line 266.
+Package pdftex.def Info: ui_conf.png  used on input line 285.
 (pdftex.def)             Requested size: 407.66833pt x 162.6762pt.
-<ui_threshold.png, id=99, 560.0925pt x 443.6575pt>
+<ui_threshold.png, id=109, 560.0925pt x 443.6575pt>
 File: ui_threshold.png Graphic file (type png)
 <use ui_threshold.png>
-Package pdftex.def Info: ui_threshold.png  used on input line 277.
+Package pdftex.def Info: ui_threshold.png  used on input line 296.
 (pdftex.def)             Requested size: 407.66833pt x 322.93306pt.
  [5 <./ui_conf.png>]
-Overfull \hbox (42.94203pt too wide) in paragraph at lines 286--299
+Overfull \hbox (42.94203pt too wide) in paragraph at lines 305--318
  [] 
  []
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 312.
 [6 <./ui_threshold.png>]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 312.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 380.
+ [7]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 380.
  (./main.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 312.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 312.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 380.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 380.
 
 
 Package rerunfilecheck Warning: File `main.out' has changed.
@@ -618,21 +658,21 @@ Package rerunfilecheck Warning: File `main.out' has changed.
 (rerunfilecheck)                or use package `bookmark'.
 
 Package rerunfilecheck Info: Checksums for `main.out':
-(rerunfilecheck)             Before: FF3D9535E2802E6D4FE82ECDBE8F445C;1015
-(rerunfilecheck)             After:  E0890D11C14A5978F5D10FF9D64E1403;1088.
+(rerunfilecheck)             Before: 05EB1C95E0A9885EE936F80EFAE0C602;1153
+(rerunfilecheck)             After:  67E43260FFCA2A5E4DC16E87BE1E472F;1283.
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 312.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 380.
  ) 
 Here is how much of TeX's memory you used:
- 12223 strings out of 481239
- 221843 string characters out of 5920378
- 483388 words of memory out of 5000000
- 27280 multiletter control sequences out of 15000+600000
+ 12785 strings out of 481239
+ 229899 string characters out of 5920378
+ 491089 words of memory out of 5000000
+ 27821 multiletter control sequences out of 15000+600000
  541797 words of font info for 59 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 41i,7n,42p,221b,711s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,7n,42p,271b,770s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}</usr/share/texli
 ve/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texlive/tex
 mf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist
@@ -640,10 +680,10 @@ mf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist
 type1/public/amsfonts/cm/cmtt12.pfb></usr/share/texlive/texmf-dist/fonts/type1/
 public/amsfonts/cm/cmtt8.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm
 1200.pfb>
-Output written on main.pdf (6 pages, 315126 bytes).
+Output written on main.pdf (7 pages, 410383 bytes).
 PDF statistics:
- 144 PDF objects out of 1000 (max. 8388607)
- 120 compressed objects within 2 object streams
- 31 named destinations out of 1000 (max. 500000)
- 141 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 161 PDF objects out of 1000 (max. 8388607)
+ 135 compressed objects within 2 object streams
+ 36 named destinations out of 1000 (max. 500000)
+ 162 words of extra memory for PDF output out of 10000 (max. 10000000)
 

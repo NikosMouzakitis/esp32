@@ -18,6 +18,13 @@
 \usepackage{multirow}
 \usepackage{siunitx}
 \usepackage{caption}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{hyperref}
+
+
+
 
 
 \title{Embedded control with movement detection: \\ Utilizing MPU9250, MQTT, Node-RED, and InfluxDB and machine learning in esp32.}
@@ -65,11 +72,23 @@ The key
 functionalities are:
 
 \begin{itemize}
-    \item Reading accelerometer and gyroscope Y-axis data from the MPU9250.
+    \item Reading accelerometer and gyroscope Y-axis, and magmetometer X-axis data from the MPU9250.
     \item Applying threshold-based logic or machine learning to detect movement and determine LED and PWM states.
     \item Publishing device status data over MQTT.
     \item Restoring device LED and PWM states after reboot using InfluxDB queries and Node-RED.
 \end{itemize}
+
+
+An image of the Esp32 and the MPU sensor used in the project is presented below.
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.5\textwidth]{con.jpeg}
+			\caption{esp32 and mpu connected on breadboard.}
+			\label{fig1:}
+		\end{figure}		
+
+
+
 
 \section{MPU9250 Sensor Data and Movement Detection}
 
@@ -77,13 +96,13 @@ functionalities are:
 
 The MPU9250 is a 9-axis IMU sensor combining a 3-axis accelerometer, 
 3-axis gyroscope, and 3-axis magnetometer. 
-For this project, only the accelerometer Y-axis and gyroscope Y-axis values 
+For this project, only the accelerometer Y-axis,gyroscope Y-axis and magnetometer X-axis values 
 are utilized.
-
 \subsection{Data Acquisition}
 
 The ESP32 reads raw sensor values for accelerometer Y (\texttt{ay}) 
-and gyroscope Y (\texttt{gy}) at periodic intervals.
+,gyroscope Y (\texttt{gy}) which are used to control the activation of the two LEDs, 
+and magnetometer X (\texttt{mx}) which controls the PWM, at periodic intervals.
 
 \subsection{Threshold-Based Movement Detection}
 
@@ -303,7 +322,56 @@ ESP32 & Publish \texttt{esp32/status} & Periodic status updates \\
 \section{Motion detection via machine learning}
 
 In the second part, the goal is to move from the threshold supported movement detection and achieve the 
-operational functionalities by employing machine learning.
+operational functionalities by employing machine learning. Communication with Node-Red remains 
+the same, as the machine learning classifier is executing only in ESP32 having as a result the usage
+of the same topics and the same integration across ESP32-NodeRed.
+
+\subsection{Data acquisition}
+
+For data acquisition for each gesture, \texttt{mpu\_record.py} have been utilized in
+order to send over UART a message "record" and then create samples for each of the two
+classifiers respectively.
+After manually we create the appropriate files to pass in the Python scripts to generate the
+C functions to be used in ESP32 and use the trained classifiers.
+
+\subsection{LEDs activation}
+The system in this configuration uses the readings from the MPU9250 IMU 
+and machine learning to control the LEDs. For the data collection and feature processing the IMU
+continuously reads acceleration (ay) and gyroscope (gy) 
+data along the Y-axis. These values are stored in an implemented circular buffer (featureBuffer)(CircularBuffer.h)
+that maintains the 20 most recent samples(10 measurements of each Y axis of accelerometer and gyroscope)
+
+When the buffer is full (20 samples), the features 
+are processed for classification.
+The raw features are first scaled using the StandardScaler parameters which were generated on the \texttt{micro2.py} Python training script
+(scaler\_mean and scaler\_scale). The system then calculates Euclidean distances 
+between the current scaled features and three reference scaled patterns (LED1, LED2, and Neutral) as a similarity measure.
+If the distance to the Neutral pattern is below 2.0, our implemented system 
+considers it a neutral position and takes no action
+
+Otherwise if any of the euclidean distances between the current stored sample and the three classes(LED1 TOGGLE,LED2 TOGGLE and NEUTRAL), 
+the features are passed to the SVM classifier (trained in \texttt{micro2.py} 
+which predicts whether the motion corresponds to LED1 toggle, LED2 toggle, or Neutral.
+When a "LED1\_TOGGLE" prediction is made, 
+and at least 900ms have passed since the last toggle (debouncing method).
+The led1State boolean is flipped (true to false or false to true)
+The PWM duty cycle is set to pwmLevel variable if ON, or 0 if OFF.
+Same logic as LED1, is followed for controlling "LED2\_TOGGLE" prediction.
+
+If confidence is below 75\%, the system falls back 
+into using just the distance metrics for classification.
+As an addition the 900ms delay between toggles is used in order to prevent 
+rapid accidental toggling that can occur inside the same running sliding window as
+traversing the circular buffer of features.
+Also the confidence threshold helps for filtering out uncertain predictions.
+
+\subsection{Control of PWM}
+
+For controlling the common PWM applied in each LED in case it is "ON",
+we create a second classifier which works with data acquired from 
+magnetometer X axis readings. 
+
+
 
 
 

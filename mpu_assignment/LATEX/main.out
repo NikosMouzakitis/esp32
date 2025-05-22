@@ -14,3 +14,6 @@
 \BOOKMARK [2][-]{subsection.4.4}{UI visualization}{section.4}% 14
 \BOOKMARK [1][-]{section.5}{Summary of Data Flow}{}% 15
 \BOOKMARK [1][-]{section.6}{Motion detection via machine learning}{}% 16
+\BOOKMARK [2][-]{subsection.6.1}{Data acquisition}{section.6}% 17
+\BOOKMARK [2][-]{subsection.6.2}{LEDs activation}{section.6}% 18
+\BOOKMARK [2][-]{subsection.6.3}{Control of PWM}{section.6}% 19

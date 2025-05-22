@@ -3,38 +3,55 @@
 #include <Arduino.h>
 #include <PubSubClient.h>
 #include <driver/ledc.h>
+#include <math.h>
+#include "CircularBuffer.h"
+#include "LEDClassifier.h"
 
 
+Eloquent::ML::Port::SVM classifier;
+
+CircularBuffer featureBuffer(20);
 bool receivedInitialState = false;
+//led related classification.
+float led1_class_avg[20] = {5.35, 0.04, 5.59, 0.05, 5.42, 0.02, 5.67, 0.11, 5.43, 0.12, 5.11, 0.13, 4.12, 0.44, 3.40, 0.15, 3.06, 0.31, 2.72, 0.11};
+float led2_class_avg[20] = {-11.51, 0.06, -12.24, 0.11, -12.32, 0.11, -12.22, 0.14, -12.90, 0.07, -13.07, 0.12, -13.19, 0.07, -13.10, 0.08, -13.10, 0.14, -13.00, 0.08};
+float led_neutral_avg[20] = {-3.40, 0.11, -3.47, 0.12, -3.55, 0.12, -3.54, 0.11, -3.47, 0.11, -3.57, 0.12, -3.52, 0.12, -3.47, 0.10, -3.37, 0.09, -3.35, 0.13};
+const float led1_ref[] = {5.3560f, 0.0430f, 5.5940f, 0.0580f, 5.4200f, 0.0265f, 5.6765f, 0.1105f, 5.4330f, 0.1260f, 5.1165f, 0.1325f, 4.1240f, 0.4430f, 3.4050f, 0.1540f, 3.0645f, 0.3100f, 2.7240f, 0.1165f};
+const float led2_ref[] = {-11.5140f, 0.0645f, -12.2405f, 0.1130f, -12.3245f, 0.1055f, -12.2200f, 0.1375f, -12.9010f, 0.0705f, -13.0740f, 0.1205f, -13.1915f, 0.0750f, -13.1005f, 0.0830f, -13.0970f, 0.1415f, -13.0035f, 0.0831f};
+const float neutral_ref[] = {-3.4000f, 0.1104f, -3.4667f, 0.1152f, -3.5504f, 0.1233f, -3.5422f, 0.1063f, -3.4744f, 0.1133f, -3.5715f, 0.1193f, -3.5181f, 0.1200f, -3.4670f, 0.0959f, -3.3674f, 0.0911f, -3.3474f, 0.1326f};
+
+const float scaler_mean[20] = {/* Paste from Python output */};
+const float scaler_scale[20] = {/* Paste from Python output */};
+
+void scaleFeatures(float* features) {
+    for (int i = 0; i < 20; i++) {
+        features[i] = (features[i] - scaler_mean[i]) / scaler_scale[i];
+    }
+}
+
+
 
 // WiFi credentials
 const char* ssid = "Test_net";
 const char* password = "123456789";
-
 // MQTT server
 const char* mqtt_server = "192.168.88.247";
 int mqtt_port = 1883;
-
 // LED pins
 const int led1Pin = 15;
 const int led2Pin = 18;
-
 // PWM settings
 const int freq = 5000;
 ledc_channel_t pwmChannel1 = LEDC_CHANNEL_0;
 ledc_channel_t pwmChannel2 = LEDC_CHANNEL_1;
 const int resolution = 8;
-
 int pwmLevel = 128;  // Start at medium brightness
-
 WiFiClient espClient;
 PubSubClient client(espClient);
 bfs::Mpu9250 imu;
-
 // LED toggle states
 bool led1State = false;
 bool led2State = false;
-
 // Edge detection flags
 bool prevButton1State = false;
 bool prevButton2State = false;
@@ -110,50 +127,49 @@ void setup() {
 	//getting latest state.
 	client.subscribe("esp32/restore_state");
 	client.publish("esp32/restore_request", "get_latest");
-	
+
 
 //	client.setServer(mqtt_server, mqtt_port);
 //	client.setCallback(mqttCallback);
 
 // Connect to MQTT and wait until connected
-while (!client.connected()) {
-  Serial.println("Connecting to MQTT...");
-  if (client.connect("ESP32 client")) {
-    Serial.println("MQTT connected");
+	while (!client.connected()) {
+		Serial.println("Connecting to MQTT...");
+		if (client.connect("ESP32 client")) {
+			Serial.println("MQTT connected");
 
-    // Give time to establish connection
-    delay(200);  
-    client.loop();
+			// Give time to establish connection
+			delay(200);
+			client.loop();
 
-    // Subscribe first
-    client.subscribe("esp32/restore_state");
-    delay(100);
+			// Subscribe first
+			client.subscribe("esp32/restore_state");
+			delay(100);
 
-    // THEN send restore request
-    client.publish("esp32/restore_request", "get_latest");
-    Serial.println("Sent restore request");
-    
-    // Wait briefly to receive the response
-    unsigned long startTime = millis();
-    while (!receivedInitialState && millis() - startTime < 3000) {
-      client.loop(); // Needed to process incoming message
-      delay(10);
-    }
+			// THEN send restore request
+			client.publish("esp32/restore_request", "get_latest");
+			Serial.println("Sent restore request");
 
-    if (receivedInitialState) {
-      Serial.println("Initial state restored successfully.");
-    } else {
-      Serial.println("Warning: Did not receive restore state in time.");
-    }
+			// Wait briefly to receive the response
+			unsigned long startTime = millis();
+			while (!receivedInitialState && millis() - startTime < 3000) {
+				client.loop(); // Needed to process incoming message
+				delay(10);
+			}
 
-  } else {
-    Serial.print("MQTT connect failed, rc=");
-    Serial.print(client.state());
-    Serial.println(" trying again in 5 seconds");
-    delay(5000);
-  }
-}
+			if (receivedInitialState) {
+				Serial.println("Initial state restored successfully.");
+			} else {
+				Serial.println("Warning: Did not receive restore state in time.");
+			}
 
+		} else {
+			Serial.print("MQTT connect failed, rc=");
+			Serial.print(client.state());
+			Serial.println(" trying again in 5 seconds");
+			delay(5000);
+		}
+	}
 
 
 }
@@ -164,75 +180,152 @@ void loop() {
 	}
 	client.loop();
 
+
 	if (imu.Read()) {
-		Serial.print("\nAccX: ");
+//		Serial.print("\nAccX: ");
 		float ax=imu.accel_x_mps2();
-		Serial.print(ax);
-		Serial.println(" ");
-		Serial.print("AccY: ");
+//		Serial.print(ax);
+//		Serial.println(" ");
+//		Serial.print("AccY: ");
 		float ay=imu.accel_y_mps2();
-		Serial.print(ay);
-		Serial.println(" ");
-		Serial.print("AccZ: ");
+//		Serial.print(ay);
+//		Serial.println(" ");
+//		Serial.print("AccZ: ");
 		float az = imu.accel_z_mps2();
-		Serial.print(az);
-		Serial.println(" ");
+//		Serial.print(az);
+//		Serial.println(" ");
 		String accData = "ax:" + String(ax) + " ay:" + String(ay) + " az:" + String(az);
-		Serial.println(accData);
-		Serial.print("GyroX: ");
+//		Serial.println(accData);
+//		Serial.print("GyroX: ");
 		float gx = imu.gyro_x_radps();
-		Serial.print(gx);
-		Serial.println(" ");
-		Serial.print("GyroY: ");
+		//	Serial.print(gx);	Serial.println(" ");	Serial.print("GyroY: ");
 		float gy = imu.gyro_y_radps();
-		Serial.print(gy);
-		Serial.println(" ");
-		Serial.print("GyroZ: ");
+//		Serial.print(gy);
+//		Serial.println(" ");
+//		Serial.print("GyroZ: ");
 		float gz=imu.gyro_z_radps();
-		Serial.print(gz);
-		Serial.println(" ");
+//		Serial.print(gz);
+//		Serial.println(" ");
 		String gyroData = "gx:" + String(gx) + " gy:" + String(gy) + " gz:" + String(gz);
-		Serial.println(gyroData);
-	
-		float mx, my, mz; mx = imu.mag_x_ut(); my = imu.mag_y_ut(); mz = imu.mag_z_ut();
-		Serial.print("mx: "); Serial.print(mx);
-		Serial.print(" my: "); Serial.print(my);
-		Serial.print(" mz: "); Serial.print(mz);
-		
+//		Serial.println(gyroData);
+
+		float mx, my, mz;
+		mx = imu.mag_x_ut();
+		my = imu.mag_y_ut();
+		mz = imu.mag_z_ut();
+//		Serial.print("mx: "); Serial.print(mx); Serial.print(" my: ");	Serial.print(my);	Serial.print(" mz: ");	Serial.print(mz);
+
 
 		// Publish data
 		client.publish("esp32/acc", accData.c_str());
 		client.publish("esp32/gyro", gyroData.c_str());
 
-		// Button logic for LED 1 (ay > 0.5)
-		bool button1Pressed = (ay > 0.5);
-		if (button1Pressed && !prevButton1State) {
-			led1State = !led1State;
-			Serial.println(led1State ? "LED1 toggled ON" : "LED1 toggled OFF");
-		}
-		prevButton1State = button1Pressed;
 
-		// Button logic for LED 2 (ay < -10)
-		bool button2Pressed = (ay < -10);
-		if (button2Pressed && !prevButton2State) {
-			led2State = !led2State;
-			Serial.println(led2State ? "LED2 toggled ON" : "LED2 toggled OFF");
+		//machine learning related.
+		// Add new data
+		featureBuffer.add(ay);
+		featureBuffer.add(gy);
+		//classification should be done now.
+		if (featureBuffer.getSize() == 20) {
+        float features[20];
+        featureBuffer.getFeatures(features);
+
+        // 1. Scale the features
+        scaleFeatures(features);
+
+        // 2. Check distances (using scaled features)
+        float dist_led1 = euclideanDistance(features, led1_ref, 20);
+        float dist_led2 = euclideanDistance(features, led2_ref, 20);
+        float dist_neutral = euclideanDistance(features, neutral_ref, 20);
+
+        // 3. Make decision
+        if (dist_neutral < 3.0f) {  // Neutral threshold
+            Serial.println("NEUTRAL (distance)");
+        } else {
+            // Use classifier
+            String prediction = classifier.predictLabel(features);
+            float confidence = classifier.predict(features);
+
+            if (confidence > 0.7) {
+                Serial.println("Classifier: " + prediction);
+            } else {
+                // Fallback to distances
+                prediction = (dist_led1 < dist_led2) ? "LED1" : "LED2";
+                Serial.println("Low confidence, using distance: " + prediction);
+            }
+        }
+    }
+		/*
+		if(featureBuffer.getSize() == 20) {
+			float features[20];
+			featureBuffer.getFeatures(features);
+
+			// In your classification:
+			float dist_led1 = euclideanDistance(features, led1_class_avg, 20);
+			float dist_led2 = euclideanDistance(features, led2_class_avg, 20);
+			float dist_neutral = euclideanDistance(features, neutral_ref, 20);
+
+			Serial.printf("LED1 Distance: %.2f\n", dist_led1);
+			Serial.println("");
+			Serial.printf("LED2 Distance: %.2f\n", dist_led2);
+			Serial.println("");
+			Serial.printf("NEUTRAL Distance: %.2f\n", dist_neutral);
+			Serial.println("");
+
+			// The class with smallest distance is the best match
+			float min_dist = min(dist_led1, min(dist_led2, dist_neutral));
+			
+			Serial.println("_---------------------------------+");
+			Serial.println("_---------------------------------+");
+			if (min_dist == dist_neutral) {
+				Serial.println("NEUTRAL position (closest match)");
+			}
+			if (min_dist == dist_led1) {
+				Serial.println("LED1 position (closest match)");
+			}
+			if (min_dist == dist_led2) {
+				Serial.println("LED2 position (closest match)");
+			}
+			Serial.println("_---------------------------------+");
+			Serial.println("_---------------------------------+");
+
+			if(min_dist  < 10) {
+				String prediction = classifier.predictLabel(features);
+				float confidence = classifier.predict(features);
+				Serial.printf("\nClassifier result: %s (confidence: %.2f)\n", prediction.c_str(), confidence);
+			}
 		}
-		prevButton2State = button2Pressed;
-		
+		*/
+		/*  Threshold logic for leds.
+				// Button logic for LED 1 (ay > 0.5)
+				bool button1Pressed = (ay > 0.5);
+				if (button1Pressed && !prevButton1State) {
+					led1State = !led1State;
+				//	Serial.println(led1State ? "LED1 toggled ON" : "LED1 toggled OFF");
+				}
+				prevButton1State = button1Pressed;
+
+				// Button logic for LED 2 (ay < -10)
+				bool button2Pressed = (ay < -10);
+				if (button2Pressed && !prevButton2State) {
+					led2State = !led2State;
+				//	Serial.println(led2State ? "LED2 toggled ON" : "LED2 toggled OFF");
+				}
+				prevButton2State = button2Pressed;
+		*/
 		// PWM control via mx
 		if (mx > 60) {
 			pwmLevel = min(255, pwmLevel + 10);
 		} else if (mx < 30) {
 			pwmLevel = max(0, pwmLevel - 10);
 		}
-		Serial.print("PWM level now: ");
-		Serial.println(pwmLevel);
+		//Serial.print("PWM level now: ");
+		//Serial.println(pwmLevel);
 
-/*
-		// PWM brightness based on gyroY
-		int pwmValue = map(constrain((int)(gy * 100), -300, 300), -300, 300, 0, 255);
-*/
+		/*
+				// PWM brightness based on gyroY
+				int pwmValue = map(constrain((int)(gy * 100), -300, 300), -300, 300, 0, 255);
+		*/
 		// LED1 control
 		ledc_set_duty(LEDC_LOW_SPEED_MODE, pwmChannel1, led1State ? pwmLevel : 0);
 		ledc_update_duty(LEDC_LOW_SPEED_MODE, pwmChannel1);
@@ -241,21 +334,20 @@ void loop() {
 		ledc_set_duty(LEDC_LOW_SPEED_MODE, pwmChannel2, led2State ? pwmLevel : 0);
 		ledc_update_duty(LEDC_LOW_SPEED_MODE, pwmChannel2);
 
-		Serial.printf("ay=%.2f, gy=%.2f, LED1=%s, LED2=%s, PWM=%d\n", ay, gy,
-		              led1State ? "ON" : "OFF", led2State ? "ON" : "OFF", pwmLevel);
+		//Serial.printf("ay=%.2f, gy=%.2f, LED1=%s, LED2=%s, PWM=%d\n", ay, gy,led1State ? "ON" : "OFF", led2State ? "ON" : "OFF", pwmLevel);
 
 
 		// Publish combined status message
 		String statusMessage = "LED1:" + String(led1State ? "ON" : "OFF") +
-                               " LED2:" + String(led2State ? "ON" : "OFF") +
-                               " PWM:" + String(pwmLevel);
+		                       " LED2:" + String(led2State ? "ON" : "OFF") +
+		                       " PWM:" + String(pwmLevel);
 		client.publish("esp32/status", statusMessage.c_str());
-		Serial.println("Published status: " + statusMessage);
-	
+		//	Serial.println("Published status: " + statusMessage);
+
 
 	}
 
-	delay(1000);
+	delay(100);
 }
 
 void reconnect() {
@@ -294,3 +386,132 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 	}
 }
 
+
+float cosineSimilarity20(const float* a, const float* b) {
+	float dot_product = 0.0f;
+	float mag_a = 0.0f;
+	float mag_b = 0.0f;
+
+	// Unrolled loop for better performance on ESP32
+	dot_product += a[0] * b[0];
+	mag_a += a[0] * a[0];
+	mag_b += b[0] * b[0];
+	dot_product += a[1] * b[1];
+	mag_a += a[1] * a[1];
+	mag_b += b[1] * b[1];
+	dot_product += a[2] * b[2];
+	mag_a += a[2] * a[2];
+	mag_b += b[2] * b[2];
+	dot_product += a[3] * b[3];
+	mag_a += a[3] * a[3];
+	mag_b += b[3] * b[3];
+	dot_product += a[4] * b[4];
+	mag_a += a[4] * a[4];
+	mag_b += b[4] * b[4];
+	dot_product += a[5] * b[5];
+	mag_a += a[5] * a[5];
+	mag_b += b[5] * b[5];
+	dot_product += a[6] * b[6];
+	mag_a += a[6] * a[6];
+	mag_b += b[6] * b[6];
+	dot_product += a[7] * b[7];
+	mag_a += a[7] * a[7];
+	mag_b += b[7] * b[7];
+	dot_product += a[8] * b[8];
+	mag_a += a[8] * a[8];
+	mag_b += b[8] * b[8];
+	dot_product += a[9] * b[9];
+	mag_a += a[9] * a[9];
+	mag_b += b[9] * b[9];
+	dot_product += a[10] * b[10];
+	mag_a += a[10] * a[10];
+	mag_b += b[10] * b[10];
+	dot_product += a[11] * b[11];
+	mag_a += a[11] * a[11];
+	mag_b += b[11] * b[11];
+	dot_product += a[12] * b[12];
+	mag_a += a[12] * a[12];
+	mag_b += b[12] * b[12];
+	dot_product += a[13] * b[13];
+	mag_a += a[13] * a[13];
+	mag_b += b[13] * b[13];
+	dot_product += a[14] * b[14];
+	mag_a += a[14] * a[14];
+	mag_b += b[14] * b[14];
+	dot_product += a[15] * b[15];
+	mag_a += a[15] * a[15];
+	mag_b += b[15] * b[15];
+	dot_product += a[16] * b[16];
+	mag_a += a[16] * a[16];
+	mag_b += b[16] * b[16];
+	dot_product += a[17] * b[17];
+	mag_a += a[17] * a[17];
+	mag_b += b[17] * b[17];
+	dot_product += a[18] * b[18];
+	mag_a += a[18] * a[18];
+	mag_b += b[18] * b[18];
+	dot_product += a[19] * b[19];
+	mag_a += a[19] * a[19];
+	mag_b += b[19] * b[19];
+
+	// Calculate magnitudes
+	mag_a = sqrtf(mag_a);
+	mag_b = sqrtf(mag_b);
+
+	// Avoid division by zero
+	if (mag_a == 0.0f || mag_b == 0.0f) {
+		return 0.0f;
+	}
+
+	return dot_product / (mag_a * mag_b);
+}
+
+// Replace your cosineSimilarity20 function with this enhanced version:
+void printSimilarityDiagnostics(const float* sample, const float* reference, const char* className) {
+	Serial.print("\nDetailed similarity for ");
+	Serial.println(className);
+
+	float dot_product = 0.0f;
+	float mag_sample = 0.0f;
+	float mag_ref = 0.0f;
+
+	Serial.println("Index | Sample | Reference | Product");
+	Serial.println("-----------------------------------");
+
+	for (int i = 0; i < 20; i++) {
+		float product = sample[i] * reference[i];
+		dot_product += product;
+		mag_sample += sample[i] * sample[i];
+		mag_ref += reference[i] * reference[i];
+
+		Serial.printf("%2d | %7.3f | %7.3f | %7.3f\n",
+		              i, sample[i], reference[i], product);
+		Serial.println();
+	}
+
+	mag_sample = sqrtf(mag_sample);
+	mag_ref = sqrtf(mag_ref);
+
+	float similarity = (mag_sample == 0.0f || mag_ref == 0.0f)
+	                   ? 0.0f
+	                   : (dot_product / (mag_sample * mag_ref));
+
+	Serial.println("-----------------------------------");
+	Serial.printf("Dot product: %.4f\n", dot_product);
+	Serial.println();
+	Serial.printf("Magnitude sample: %.4f\n", mag_sample);
+	Serial.println();
+	Serial.printf("Magnitude reference: %.4f\n", mag_ref);
+	Serial.println();
+	Serial.printf("Final similarity: %.4f\n", similarity);
+	Serial.println();
+}
+
+
+float euclideanDistance(const float* a, const float* b, int size) {
+	float sum = 0.0f;
+	for (int i = 0; i < size; i++) {
+		sum += powf(a[i] - b[i], 2);
+	}
+	return sqrtf(sum);
+}
