@@ -22,6 +22,8 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
 
 
 
@@ -112,7 +114,8 @@ change the states of its LEDs and PWM output.
 
 \subsection{Controlling LEDs and PWM}
 
-Based on movement detection, the device sets the LEDs and PWM.
+Based on movement detection, the device sets the LEDs and a common PWM variable which is applied on 
+any LED that is on "active" state.
 
 \subsection{Status Publishing}
 
@@ -334,6 +337,9 @@ classifiers respectively.
 After manually we create the appropriate files to pass in the Python scripts to generate the
 C functions to be used in ESP32 and use the trained classifiers.
 
+
+
+
 \subsection{LEDs activation}
 The system in this configuration uses the readings from the MPU9250 IMU 
 and machine learning to control the LEDs. For the data collection and feature processing the IMU
@@ -365,17 +371,136 @@ rapid accidental toggling that can occur inside the same running sliding window 
 traversing the circular buffer of features.
 Also the confidence threshold helps for filtering out uncertain predictions.
 
+The SVM classifier used for the LEDs activation and determining actions as LED1\_TOGGLE, NEUTRAL and LED2\_TOGGLE
+is getting as an input 20 features which consist of 10 samples of continuous values of (ay,gy) : 
+\newline 
+(\textit{ay1,gy1,ay2,gy2,...ay10,gy10}).
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[node distance=1.5cm and 2cm, auto]
+
+% Input nodes
+\node[draw, circle] (x1) {$x_1$};
+\node[draw, circle, below=of x1] (x2) {$x_2$};
+\node[draw, circle, below=of x2] (x3) {$\vdots$};
+\node[draw, circle, below=of x3] (xn) {$x_20$};
+
+% SVM box
+\node[draw, rectangle, right=2cm of x2, align=center, minimum height=2cm, minimum width=2cm] (svm) {LED Classifier};
+
+% Output nodes
+\node[draw, rectangle, right=3cm of svm.north] (y1) {LED1\_TOGGLE};
+\node[draw, rectangle, right=2cm of svm.center] (y2) {LED2\_TOGGLE};
+\node[draw, rectangle, right=3cm of svm.south] (y3) {NEUTRAL};
+
+% Connections
+\foreach \i in {x1,x2,x3,xn}
+    \draw[->] (\i) -- (svm);
+
+\draw[->] (svm.north east) -- (y1);
+\draw[->] (svm.east) -- (y2);
+\draw[->] (svm.south east) -- (y3);
+\end{tikzpicture}
+\caption{The SVM classifier used for the LED activation actions.}
+\end{figure}
+
+
+
+
+
+
 \subsection{Control of PWM}
 
 For controlling the common PWM applied in each LED in case it is "ON",
 we create a second classifier which works with data acquired from 
 magnetometer X axis readings. 
 
+The SVM classifier used for determining the increase/decrease of the global used PWM value
+is getting as an input 9 features which consist of 9 samples of continuous values of (mx) : 
+\newline 
+(\textit{mx1,mx2,...mx9}).
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[node distance=1.5cm and 2cm, auto]
+
+% Input nodes
+\node[draw, circle] (x1) {$x_0$};
+\node[draw, circle, below=of x1] (x2) {$x_2$};
+\node[draw, circle, below=of x2] (x3) {$\vdots$};
+\node[draw, circle, below=of x3] (xn) {$x_9$};
+
+% SVM box
+\node[draw, rectangle, right=2cm of x2, align=center, minimum height=2cm, minimum width=2cm] (svm) {PWM Classifier};
+
+% Output nodes
+\node[draw, rectangle, right=3cm of svm.north] (y1) {INCREASE};
+\node[draw, rectangle, right=3cm of svm.center] (y2) {DECREASE};
+\node[draw, rectangle, right=3cm of svm.south] (y3) {NEUTRAL};
+
+% Connections
+\foreach \i in {x1,x2,x3,xn}
+    \draw[->] (\i) -- (svm);
+\draw[->] (svm.north east) -- (y1);
+\draw[->] (svm.east) -- (y2);
+\draw[->] (svm.south east) -- (y3);
+\end{tikzpicture}
+\caption{The SVM classifier used for the PWM actions.}
+\end{figure}
+
+
+
+	\subsubsection{Classifier's training and integration with the ESP32 platform.}
+	Both of the SVM classifiers are trained in a local host with higher computational capabilities than ESP32, 
+	in order to achieve classification accuracy and then transfer in the embedded system only the libraries 
+	which include the weights of the trained classifier.  After generating both of the classifiers their respective library 
+	files PWMClassifier.h and LEDClassifier.h are included in the source file which will be compiled and uploaded to the ESP32.
+	In the source files the training for both is implemented in \texttt{micro2.py,micro3.py} respectively. Also in these files
+	after training we do create one reference average sample per class which later is used for similarity comparison in the ESP32.
+
+
+	\paragraph{Why euclidean distance was chosen over cosine similarity:}
+
+	When detecting the class closest to a given point in feature space, 
+	Euclidean distance can be more appropriate than cosine similarity in situations 
+	where the absolute proximity of the vectors is more important than their directional alignment. 
+	While cosine similarity measures how aligned two vectors are (ignoring magnitude), 
+	Euclidean distance accounts for both the direction and the magnitude. 
+	This becomes crucial in our situation as well as shown experimentaly from the data, 
+	where cosine similarity was shown better similary to wrong gesture because the sample of 
+	the wrong class was an amplification of the correct's one.
+	Its like in a graphical space  when one class is slightly rotated or "hidden behind" 
+	another in angle they may have different orientations but still be physically close in space. 
+	In such cases, cosine similarity might consider them very different due to the angle, 
+	even though they are spatially close. 
+	Euclidean distance, in the other hand would correctly reflect their true closeness, 
+	making it better suited for identifying the nearest class based on actual position rather than orientation.	
+	For this reason in this project Euclidean distance has been utilized over the cosine similarity as a similarity measure.
+
+
+	A screenshot is presented also which shows both classifiers classifying the gesture as to increase the PWM which is applied on
+	the LEDs and with the LED2 toggled. We can observe the classification outputs and also the Euclidean distances for each sample
+	against the reference scaled average vectors who describe each class.
+
+	\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.9\textwidth]{classification.png}
+			\caption{classification screenshot.}
+			\label{fig1:}
+		\end{figure}		
 
 
 
 
-
+	From out terminal also we can observe the values inside our esp32db database in \texttt{led\_status} measurements.c
+	There is timestamp, led1 status(0-off 1-on), led2 status(same as led1) and the common pwm value.
+	\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.9\textwidth]{influx.png}
+			\caption{Querying our esp32db: select * from led\_status}
+			\label{fig1:}
+		\end{figure}		
 
 \end{document}
 
