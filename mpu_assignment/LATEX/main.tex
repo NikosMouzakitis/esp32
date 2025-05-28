@@ -5,9 +5,7 @@
 \usepackage{color}
 \usepackage{geometry}
 \geometry{margin=1in}
-\usepackage{amsmath}
 \usepackage{graphicx}
-\usepackage{amsmath}
 \usepackage{hyperref}
 \usepackage{setspace}
 \usepackage{listings}
@@ -24,14 +22,15 @@
 \usepackage{hyperref}
 \usepackage{tikz}
 \usetikzlibrary{positioning}
-
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
 
 
 
 
 \title{Embedded control with movement detection: \\ Utilizing MPU9250, MQTT, Node-RED, and InfluxDB and machine learning in esp32.}
 \author{Nikolaos Mouzakitis}
-\date{May 21, 2025}
+\date{May 24, 2025}
 
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
@@ -69,6 +68,7 @@ inertial measurement unit (IMU) sensor to detect device movements
 and control 2 LEDs and PWM outputs accordingly. 
 It implements a mechanism to persist and restore device state 
 via MQTT messaging, Node-RED flow processing, and data storage in an InfluxDB time-series database.
+Also Grafana is used in the last part of the project for visualization.
 
 The key 
 functionalities are:
@@ -344,24 +344,29 @@ C functions to be used in ESP32 and use the trained classifiers.
 The system in this configuration uses the readings from the MPU9250 IMU 
 and machine learning to control the LEDs. For the data collection and feature processing the IMU
 continuously reads acceleration (ay) and gyroscope (gy) 
-data along the Y-axis. These values are stored in an implemented circular buffer (featureBuffer)(CircularBuffer.h)
+data along the Y-axis. These values are stored in an implemented circular buffer named featureBuffer (source: \texttt{CircularBuffer.h})
 that maintains the 20 most recent samples(10 measurements of each Y axis of accelerometer and gyroscope)
 
 When the buffer is full (20 samples), the features 
 are processed for classification.
 The raw features are first scaled using the StandardScaler parameters which were generated on the \texttt{micro2.py} Python training script
-(scaler\_mean and scaler\_scale). The system then calculates Euclidean distances 
-between the current scaled features and three reference scaled patterns (LED1, LED2, and Neutral) as a similarity measure.
+(scaler\_mean and scaler\_scale). 
+The system then calculates Euclidean distances 
+between the current scaled features and three reference scaled patterns 
+(LED1, LED2, and Neutral) as a similarity measure.
 If the distance to the Neutral pattern is below 2.0, our implemented system 
-considers it a neutral position and takes no action
+considers it a neutral position and takes no action.
 
-Otherwise if any of the euclidean distances between the current stored sample and the three classes(LED1 TOGGLE,LED2 TOGGLE and NEUTRAL), 
-the features are passed to the SVM classifier (trained in \texttt{micro2.py} 
-which predicts whether the motion corresponds to LED1 toggle, LED2 toggle, or Neutral.
+Otherwise if any of the euclidean distances between the current stored sample and
+the three classes(LED1 TOGGLE,LED2 TOGGLE and NEUTRAL), 
+the features are passed to the SVM classifier (trained in \texttt{micro2.py}) 
+which predicts whether the motion corresponds to LED1 toggle, 
+LED2 toggle, or Neutral classes.
+
 When a "LED1\_TOGGLE" prediction is made, 
 and at least 900ms have passed since the last toggle (debouncing method).
-The led1State boolean is flipped (true to false or false to true)
-The PWM duty cycle is set to pwmLevel variable if ON, or 0 if OFF.
+The led1State boolean is flipped (true to false or false to true).
+As for the PWM duty cycle, it is set to pwmLevel variable if ON, or to 0 if OFF.
 Same logic as LED1, is followed for controlling "LED2\_TOGGLE" prediction.
 
 If confidence is below 75\%, the system falls back 
@@ -485,7 +490,7 @@ is getting as an input 9 features which consist of 9 samples of continuous value
 
 	\begin{figure}[H]
 			\centering
-			\includegraphics[width=0.9\textwidth]{classification.png}
+			\includegraphics[width=0.7\textwidth]{classification.png}
 			\caption{classification screenshot.}
 			\label{fig1:}
 		\end{figure}		
@@ -495,12 +500,186 @@ is getting as an input 9 features which consist of 9 samples of continuous value
 
 	From out terminal also we can observe the values inside our esp32db database in \texttt{led\_status} measurements.c
 	There is timestamp, led1 status(0-off 1-on), led2 status(same as led1) and the common pwm value.
-	\begin{figure}[H]
+		\begin{figure}[H]
 			\centering
-			\includegraphics[width=0.9\textwidth]{influx.png}
+			\includegraphics[width=0.7\textwidth]{influx.png}
 			\caption{Querying our esp32db: select * from led\_status}
 			\label{fig1:}
 		\end{figure}		
+
+
+
+
+
+
+	\subsection{Classifier selection}
+	Although the support vector machine classifier has been selected and implemented for both of the 
+	classification tasks performed in the project, in the script \texttt{micro\_explore.py}
+	we have tested a range of classifiers and hyperparameters in order to obtain the broader picture of what they offer and 
+	how they behave on our data. Of course instead of the SVM we could have used any of these since the API calls from the generated header
+	files follow the same style.
+	
+	As we can observe utilizing our available data, 
+	SVM (using different kernel from the one we implemented and the Gaussian Naive Bayes classifiers) had 8\% 
+	better F1-score than the SVM with the linear kernel that we have used.
+	
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=1\textwidth]{micro_xplore.png}
+			\caption{Classifier's space exploration.}
+			\label{fig1:}
+		\end{figure}		
+
+
+
+
+
+
+
+
+
+
+\section{Containerizing server side}
+
+
+Node-Red, InfluxDB and Grafana will be run as docker containers in the last part of this project.
+
+In the first part, the creation of the \texttt{.yml} file
+
+{\scriptsize
+\begin{verbatim}
+nicko@nicko:~/implementations/esp32/mpu_assignment/docker$ cat docker-compose.yml 
+version: '3'
+
+services:
+  node-red:
+    image: nodered/node-red
+    ports:
+      - "1880:1880"
+      - "18883:1883"   #different from mosquitto on host.
+    volumes:
+      - node-red-data:/data
+    restart: unless-stopped
+    depends_on:
+      - influxdb
+
+  influxdb:
+    image: influxdb:1.6.4
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb
+    environment:
+      - INFLUXDB_DB=esp32db
+      - INFLUXDB_ADMIN_ENABLED=true
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3008:3000"      #different because of conflict on host.
+    volumes:
+      - grafana-data:/var/lib/grafana
+    restart: unless-stopped
+    depends_on:
+      - influxdb
+
+volumes:
+  node-red-data:
+  influxdb-data:
+  grafana-data:
+
+\end{verbatim}
+}
+
+is used in order to pass the information of what container we aim to generate
+and 
+{\scriptsize
+\begin{verbatim}
+docker-compose up -d
+\end{verbatim}
+}
+completes this action.
+
+To run influxdb queries and inspection of the dataset:
+{\scriptsize
+\begin{verbatim}
+docker exec -it docker-influxdb-1 influx
+\end{verbatim}
+}
+
+
+In Node-Red when configuring the MQTT in/outs, we need to pass the "Server" IP as Linux "see"s it on an \texttt{ifconfig} command as can be
+see on the following figure.
+
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=1\textwidth]{doc1.png}
+			\caption{Setting server ip for MQTT nodes}
+			\label{fig1:}
+		\end{figure}		
+
+
+For the configuration of InfluxDB nodes inside the Node-Red, on the "Server" IP, we need to pass the name of the docker container 
+which in our case is \texttt{docker-influxdb-1}.
+
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.8\textwidth]{doc2.png}
+			\caption{Setting server ip for InfluxDB nodes.}
+			\label{fig1:}
+		\end{figure}		
+
+For the password previously we assigned via command line on \texttt{influx-cli}:
+
+{\scriptsize
+\begin{verbatim}
+CREATE USER "myuser" WITH PASSWORD 'mypassword'
+GRANT ALL ON "esp32db" TO "myuser"
+\end{verbatim}
+}
+By completing those configurations we have the same functionality as before by running the two server services 
+in separate Docker containers, without the need to modify anything on the source code of the ESP32.
+
+\subsection{Current MQTT communication architecture}
+
+The ESP32 device connects to the local Wi-Fi network using the 
+credentials \texttt{ssid} and \texttt{password}. 
+It establishes an MQTT client connection to the Mosquitto broker running on the host machine at its IP address and port \texttt{1883}. 
+Meanwhile, the Node-RED service is containerized within the Docker 
+and also connects to the same Mosquitto broker on the host, 
+using the Docker host IP address to communicate with the broker as shown in the upcoming figure.
+
+All MQTT messages published by the ESP32 are received by the Mosquitto broker 
+and then routed to Node-RED flows subscribed to the respective topics. 
+This setup enables the communication between the hardware and the Node-RED 
+environment through a shared MQTT broker.
+
+\begin{tikzpicture}[
+  device/.style={rectangle, draw, rounded corners, minimum width=2cm, minimum height=0.7cm, fill=blue!20, font=\footnotesize},
+  broker/.style={ellipse, draw, fill=green!20, minimum width=2.5cm, minimum height=0.7cm, font=\footnotesize},
+  arrow/.style={-{Stealth[length=2mm]}, thick},
+  node distance=2cm and 3cm
+  ]
+
+  % Nodes
+  \node[device] (esp) {ESP32 (Wi-Fi)};
+  \node[broker, right=3cm of esp] (broker) {Mosquitto Broker \\ (Host IP::1883)};
+  \node[device, below=1.5cm of broker] (nodered) {Node-RED \\ (Docker container)};
+  
+  % Connections
+  \draw[arrow] (esp) -- node[above, font=\footnotesize] {MQTT Pub/Sub} (broker);
+  \draw[arrow] (broker) -- node[right, font=\footnotesize] {MQTT Pub/Sub} (nodered);
+
+  % Network labels
+  \node[above=0.4cm of esp, font=\footnotesize] {Local Wi-Fi Network};
+  \node[right=0.1cm of nodered, font=\footnotesize] {Docker Network \\ };
+
+\end{tikzpicture}
+
+
+
+
 
 \end{document}
 

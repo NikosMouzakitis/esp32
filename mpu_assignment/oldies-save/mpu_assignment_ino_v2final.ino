@@ -57,7 +57,7 @@ unsigned long lastLed1,lastLed2;
 const char* ssid = "Test_net";
 const char* password = "123456789";
 // MQTT server
-const char* mqtt_server = "192.168.39.247";
+const char* mqtt_server = "192.168.31.247";
 int mqtt_port = 1883;
 // LED pins
 const int led1Pin = 15;

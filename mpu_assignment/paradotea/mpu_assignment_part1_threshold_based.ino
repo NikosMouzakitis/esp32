@@ -112,8 +112,6 @@ void setup() {
 	client.publish("esp32/restore_request", "get_latest");
 
 
-//	client.setServer(mqtt_server, mqtt_port);
-//	client.setCallback(mqttCallback);
 
 // Connect to MQTT and wait until connected
 	while (!client.connected()) {
@@ -235,10 +233,6 @@ void loop() {
 		Serial.print("PWM level now: ");
 		Serial.println(pwmLevel);
 
-		/*
-				// PWM brightness based on gyroY
-				int pwmValue = map(constrain((int)(gy * 100), -300, 300), -300, 300, 0, 255);
-		*/
 		// LED1 control
 		ledc_set_duty(LEDC_LOW_SPEED_MODE, pwmChannel1, led1State ? pwmLevel : 0);
 		ledc_update_duty(LEDC_LOW_SPEED_MODE, pwmChannel1);

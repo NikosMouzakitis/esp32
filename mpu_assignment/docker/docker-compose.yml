@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  node-red:
+    image: nodered/node-red
+    ports:
+      - "1880:1880"
+      - "18883:1883"
+    volumes:
+      - node-red-data:/data
+    restart: unless-stopped
+    depends_on:
+      - influxdb
+
+  influxdb:
+    image: influxdb:1.6.4
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb
+    environment:
+      - INFLUXDB_DB=esp32db
+      - INFLUXDB_ADMIN_ENABLED=true
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3008:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    restart: unless-stopped
+    depends_on:
+      - influxdb
+
+volumes:
+  node-red-data:
+  influxdb-data:
+  grafana-data:

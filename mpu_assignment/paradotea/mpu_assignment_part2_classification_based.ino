@@ -49,8 +49,6 @@ void PWMscaleFeatures(float* features) {
 	}
 }
 
-
-
 unsigned long lastLed1,lastLed2;
 
 // WiFi credentials
@@ -151,8 +149,6 @@ void setup() {
 	client.publish("esp32/restore_request", "get_latest");
 
 
-//	client.setServer(mqtt_server, mqtt_port);
-//	client.setCallback(mqttCallback);
 
 // Connect to MQTT and wait until connected
 	while (!client.connected()) {
@@ -202,42 +198,20 @@ void loop() {
 		reconnect();
 	}
 	client.loop();
-
-
 	if (imu.Read()) {
-//		Serial.print("\nAccX: ");
 		float ax=imu.accel_x_mps2();
-//		Serial.print(ax);
-//		Serial.println(" ");
-//		Serial.print("AccY: ");
 		float ay=imu.accel_y_mps2();
-//		Serial.print(ay);
-//		Serial.println(" ");
-//		Serial.print("AccZ: ");
 		float az = imu.accel_z_mps2();
-//		Serial.print(az);
-//		Serial.println(" ");
 		String accData = "ax:" + String(ax) + " ay:" + String(ay) + " az:" + String(az);
-//		Serial.println(accData);
-//		Serial.print("GyroX: ");
 		float gx = imu.gyro_x_radps();
-		//	Serial.print(gx);	Serial.println(" ");	Serial.print("GyroY: ");
 		float gy = imu.gyro_y_radps();
-//		Serial.print(gy);
-//		Serial.println(" ");
-//		Serial.print("GyroZ: ");
 		float gz=imu.gyro_z_radps();
-//		Serial.print(gz);
-//		Serial.println(" ");
 		String gyroData = "gx:" + String(gx) + " gy:" + String(gy) + " gz:" + String(gz);
-//		Serial.println(gyroData);
 
 		float mx, my, mz;
 		mx = imu.mag_x_ut();
 		my = imu.mag_y_ut();
 		mz = imu.mag_z_ut();
-//		Serial.print("mx: "); Serial.print(mx); Serial.print(" my: ");	Serial.print(my);	Serial.print(" mz: ");	Serial.print(mz);
-
 
 		// Publish data
 		client.publish("esp32/acc", accData.c_str());
@@ -321,15 +295,6 @@ void loop() {
 			}
 		}
 
-
-		/*
-		// PWM control via mx
-		if (mx > 60) {
-			pwmLevel = min(255, pwmLevel + 10);
-		} else if (mx < 30) {
-			pwmLevel = max(0, pwmLevel - 10);
-		}
-		*/
 		//pwm via machine learning.
 		
 		if(PWMfeatureBuffer.getSize() == 9) {
@@ -371,9 +336,6 @@ void loop() {
 		// LED2 control
 		ledc_set_duty(LEDC_LOW_SPEED_MODE, pwmChannel2, led2State ? pwmLevel : 0);
 		ledc_update_duty(LEDC_LOW_SPEED_MODE, pwmChannel2);
-
-		//Serial.printf("ay=%.2f, gy=%.2f, LED1=%s, LED2=%s, PWM=%d\n", ay, gy,led1State ? "ON" : "OFF", led2State ? "ON" : "OFF", pwmLevel);
-
 
 		// Publish combined status message
 		String statusMessage = "LED1:" + String(led1State ? "ON" : "OFF") +
@@ -423,129 +385,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 		}
 	}
 }
-
-
-float cosineSimilarity20(const float* a, const float* b) {
-	float dot_product = 0.0f;
-	float mag_a = 0.0f;
-	float mag_b = 0.0f;
-
-	// Unrolled loop for better performance on ESP32
-	dot_product += a[0] * b[0];
-	mag_a += a[0] * a[0];
-	mag_b += b[0] * b[0];
-	dot_product += a[1] * b[1];
-	mag_a += a[1] * a[1];
-	mag_b += b[1] * b[1];
-	dot_product += a[2] * b[2];
-	mag_a += a[2] * a[2];
-	mag_b += b[2] * b[2];
-	dot_product += a[3] * b[3];
-	mag_a += a[3] * a[3];
-	mag_b += b[3] * b[3];
-	dot_product += a[4] * b[4];
-	mag_a += a[4] * a[4];
-	mag_b += b[4] * b[4];
-	dot_product += a[5] * b[5];
-	mag_a += a[5] * a[5];
-	mag_b += b[5] * b[5];
-	dot_product += a[6] * b[6];
-	mag_a += a[6] * a[6];
-	mag_b += b[6] * b[6];
-	dot_product += a[7] * b[7];
-	mag_a += a[7] * a[7];
-	mag_b += b[7] * b[7];
-	dot_product += a[8] * b[8];
-	mag_a += a[8] * a[8];
-	mag_b += b[8] * b[8];
-	dot_product += a[9] * b[9];
-	mag_a += a[9] * a[9];
-	mag_b += b[9] * b[9];
-	dot_product += a[10] * b[10];
-	mag_a += a[10] * a[10];
-	mag_b += b[10] * b[10];
-	dot_product += a[11] * b[11];
-	mag_a += a[11] * a[11];
-	mag_b += b[11] * b[11];
-	dot_product += a[12] * b[12];
-	mag_a += a[12] * a[12];
-	mag_b += b[12] * b[12];
-	dot_product += a[13] * b[13];
-	mag_a += a[13] * a[13];
-	mag_b += b[13] * b[13];
-	dot_product += a[14] * b[14];
-	mag_a += a[14] * a[14];
-	mag_b += b[14] * b[14];
-	dot_product += a[15] * b[15];
-	mag_a += a[15] * a[15];
-	mag_b += b[15] * b[15];
-	dot_product += a[16] * b[16];
-	mag_a += a[16] * a[16];
-	mag_b += b[16] * b[16];
-	dot_product += a[17] * b[17];
-	mag_a += a[17] * a[17];
-	mag_b += b[17] * b[17];
-	dot_product += a[18] * b[18];
-	mag_a += a[18] * a[18];
-	mag_b += b[18] * b[18];
-	dot_product += a[19] * b[19];
-	mag_a += a[19] * a[19];
-	mag_b += b[19] * b[19];
-
-	// Calculate magnitudes
-	mag_a = sqrtf(mag_a);
-	mag_b = sqrtf(mag_b);
-
-	// Avoid division by zero
-	if (mag_a == 0.0f || mag_b == 0.0f) {
-		return 0.0f;
-	}
-
-	return dot_product / (mag_a * mag_b);
-}
-
-// Replace your cosineSimilarity20 function with this enhanced version:
-void printSimilarityDiagnostics(const float* sample, const float* reference, const char* className) {
-	Serial.print("\nDetailed similarity for ");
-	Serial.println(className);
-
-	float dot_product = 0.0f;
-	float mag_sample = 0.0f;
-	float mag_ref = 0.0f;
-
-	Serial.println("Index | Sample | Reference | Product");
-	Serial.println("-----------------------------------");
-
-	for (int i = 0; i < 20; i++) {
-		float product = sample[i] * reference[i];
-		dot_product += product;
-		mag_sample += sample[i] * sample[i];
-		mag_ref += reference[i] * reference[i];
-
-		Serial.printf("%2d | %7.3f | %7.3f | %7.3f\n",
-		              i, sample[i], reference[i], product);
-		Serial.println();
-	}
-
-	mag_sample = sqrtf(mag_sample);
-	mag_ref = sqrtf(mag_ref);
-
-	float similarity = (mag_sample == 0.0f || mag_ref == 0.0f)
-	                   ? 0.0f
-	                   : (dot_product / (mag_sample * mag_ref));
-
-	Serial.println("-----------------------------------");
-	Serial.printf("Dot product: %.4f\n", dot_product);
-	Serial.println();
-	Serial.printf("Magnitude sample: %.4f\n", mag_sample);
-	Serial.println();
-	Serial.printf("Magnitude reference: %.4f\n", mag_ref);
-	Serial.println();
-	Serial.printf("Final similarity: %.4f\n", similarity);
-	Serial.println();
-}
-
-
 float euclideanDistance(const float* a, const float* b, int size) {
 	float sum = 0.0f;
 	for (int i = 0; i < size; i++) {
