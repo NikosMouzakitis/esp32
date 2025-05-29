@@ -28,9 +28,9 @@
 
 
 
-\title{Embedded control with movement detection: \\ Utilizing MPU9250, MQTT, Node-RED, and InfluxDB and machine learning in esp32.}
+\title{Embedded system gesture recognition using lightweight machine learning}
 \author{Nikolaos Mouzakitis}
-\date{May 24, 2025}
+\date{May 28, 2025}
 
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
@@ -536,9 +536,6 @@ is getting as an input 9 features which consist of 9 samples of continuous value
 
 
 
-
-
-
 \section{Containerizing server side}
 
 
@@ -677,6 +674,41 @@ environment through a shared MQTT broker.
 
 \end{tikzpicture}
 
+\subsection{Grafana visualization}
+
+To access Grafana, we navigate to \texttt{http://localhost:3008/} since we have changed the 3000 port to 3008 due to machine port conflict.
+In the next step, connection to InfluxDB is performed by setting the appropiate Server IP and database for reading the data to be visualized.
+
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=1\textwidth]{graf1.png}
+			\caption{Grafana: configuring the InfluxDB data source.}
+			\label{fig1:}
+		\end{figure}		
+
+
+After creating a new Dashboard and creating 2 queries to fetch our data, we visualize the LED1 and LED2 status and in a separate plot
+the PWM status with an auto refresh of 5 seconds. There is flexibility to develop any kind of visualization we like based on the query we need.
+We observe ours in the following figure.
+
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=1\textwidth]{graf2.png}
+			\caption{Grafana: visualization.}
+			\label{fig1:}
+		\end{figure}		
+
+
+	Also we can observe the visualization by accesing Grafana's dashboard from a mobile phone connected in the same network by navigating
+	on \texttt{IP-of host machine hosting server:port}.
+
+
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.5\textwidth]{graf3.jpeg}
+			\caption{access from another machine(mobile) on the same net.}
+			\label{fig1:}
+		\end{figure}		
 
 
 
